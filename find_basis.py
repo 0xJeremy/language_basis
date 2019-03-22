@@ -47,9 +47,29 @@ def populate_graph(data, wordnet):
 
 def generate_image(fgraph):
 	pos = nx.layout.spring_layout(fgraph)
-	nodes = nx.draw_networkx_nodes(fgraph, pos, node_color='blue', node_sizes = [1] * len(fgraph.nodes))
-	edges = nx.draw_networkx_edges(fgraph, pos, arrowstyle='->',   node_sizes = [1] * len(fgraph.nodes),
-									arrowsize=5, edge_cmap=plt.cm.Blues, width=1)
+	node_sizes = []
+	for node in fgraph.nodes:
+		if fgraph.degree(node) > 1:
+			node_sizes.append(fgraph.degree(node) * 3)
+		else:
+			node_sizes.append(0)
+
+	# arrow_sizes = []
+	# for s,e in fgraph.edges:
+	# 	if fgraph.degree(s) > 1 and fgraph.degree(e) > 1:
+	# 		arrow_sizes.append(1)
+	# 	else:
+	# 		arrow_sizes.append(0)
+	edgelist = []
+	for s,e in fgraph.edges:
+		if fgraph.degree(s) > 1 and fgraph.degree(e) > 1:
+			edgelist.append((s,e))
+
+	# node_sizes = [3 * fgraph.degree(node) for node in fgraph.nodes if fgraph.degree(node) > 1]
+	print(node_sizes)
+	nodes = nx.draw_networkx_nodes(fgraph, pos, node_color='blue', node_size = node_sizes)
+	edges = nx.draw_networkx_edges(fgraph, pos, arrowstyle='->',   node_size = node_sizes,
+									arrowsize=5, edgelist = edgelist, edge_cmap=plt.cm.Blues, width=1)
 
 	plt.show()
 
