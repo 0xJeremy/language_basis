@@ -2,7 +2,7 @@ import json
 import networkx as nx
 import time
 
-DICTIONARY = 'dictionary.json'
+DICTIONARY = 'small_dictionary.json'
 
 def read_dictionary(file):
 	start = time.time()
@@ -34,6 +34,8 @@ def main():
 
 	wordnet = nx.DiGraph()
 	wordnet.add_nodes_from(data.keys())
+	# wordnet.add_node(1)
+	print(wordnet.nodes)
 
 	print("Added word nodes to graph.")
 
@@ -43,11 +45,13 @@ def main():
 		for target in targets:
 			try:
 				wordnet.add_edge(key, target)
-				#print("Added edge from " + str(key) + " to " + str(target))
+				print("Added edge from " + str(key) + " to " + str(target))
 			except:
 				print("could not add edge from " + str(key) + " to " + str(target))
 	end_time = time.time()
 	print("Graph populated. (" + str(end_time - start_time) + " sec.)")
+
+	print(wordnet.edges)
 
 
 if __name__ == '__main__':
