@@ -3,6 +3,9 @@ import networkx as nx
 import time
 import matplotlib as matplotlib
 import matplotlib.pyplot as plt
+from nltk.stem import WordNetLemmatizer
+from nltk.corpus import wordnet
+
 
 #------------------------------------------------------------------------------
 #								Constants
@@ -13,6 +16,19 @@ DICTIONARY = 'small_dictionary.json'
 #------------------------------------------------------------------------------
 #								Functions
 #------------------------------------------------------------------------------
+def get_wordnet_pos(treebank_tag):
+
+    if treebank_tag.startswith('J'):
+        return wordnet.ADJ
+    elif treebank_tag.startswith('V'):
+        return wordnet.VERB
+    elif treebank_tag.startswith('N'):
+        return wordnet.NOUN
+    elif treebank_tag.startswith('R'):
+        return wordnet.ADV
+    else:
+        return ''
+
 
 def read_dictionary(file):
 	start = time.time()
@@ -36,27 +52,32 @@ def clean_dictionary(rawdata):
 	for key in data:
 		data[key] = ' '.join([word for word in data[key].split() if '*' not in word])
 		data[key] = ''.join([char for char in data[key] if char.isalpha() or char == ' '])
-		data[key] = data[key].split()
+		unlemmatized = data[key].split()
+		# data[key] = []
+		# for word in unlemmatized:
+		# 	if 
 	end = time.time()
 	print("Dictionary Cleaned. (%.4f sec.)" % (end - start))
 	return data
 
 def populate_graph(data, wordnet):
+	# wnl = WordNetLemmatizer()
 	start = time.time()
 	for key in data:
-		targets = data[key]
+		targets = data[key].split()
 		for target in targets:
+			# targetStem = st.stem(target)
 			try:
 				wordnet.add_edge(key, target)
 				#Uncomment this print for debugging purposes
 				#print("Added edge from " + str(key) + " to " + str(target))
 			except:
-				print("could not add edge from " + str(key) + " to " + str(target))
+				print("could not add edge from " + str(key) + " to " + str(targetStem))
 	end = time.time()
 	print("Graph Populated. (%.4f sec.)" % (end - start))
 	return wordnet
 
-def generate_image(fgraph):
+def generate_image(fgraph, basis):
 	start = time.time()
 	pos = nx.layout.spring_layout(fgraph)
 	node_sizes = []
@@ -73,9 +94,18 @@ def generate_image(fgraph):
 			edgelist.append((s,e))
 			edgecolors.append(10 * fgraph.degree(e))
 
+	node_colors = []
+	for node in fgraph.nodes:
+		if node in basis:
+			node_colors.append('yellow')
+		else:
+			node_colors.append('blue')
+
+
+
 	#Uncomment this print for debugging purposes
 	#print(node_sizes)
-	nodes = nx.draw_networkx_nodes(fgraph, pos, node_color='blue', node_size = node_sizes)
+	nodes = nx.draw_networkx_nodes(fgraph, pos, node_color=node_colors, node_size = node_sizes)
 
 	# Change 'edgecolor' to edgecolor=edgecolors to switch the edge style (see for loop above)
 	edges = nx.draw_networkx_edges(fgraph, pos, arrowstyle='->',   node_size = node_sizes,
@@ -89,6 +119,24 @@ def generate_image(fgraph):
 	ax.set_axis_off()
 	plt.show()
 
+
+def find_basis_words(wordnet):
+	# components = nx.strongly_connected_components(wordnet)
+	# scc_graph = nx.condensation(wordnet)
+
+	#now we find sinks of the sccgraph
+	sink_sccs = nx.attracting_components(wordnet)
+
+
+	#now we simply choose a node from all sccsinks, and we can generate all definitions
+	basis_words = set()
+	for scc in sink_sccs:
+		basis_words.add(scc.pop())
+
+	return basis_words
+
+
+
 #------------------------------------------------------------------------------
 #								Main
 #------------------------------------------------------------------------------
@@ -101,7 +149,11 @@ def main():
 
 	wordnet = populate_graph(data, wordnet)
 
-	generate_image(wordnet)
+	basis = find_basis_words(wordnet)
+
+	print(basis)
+
+	generate_image(wordnet, basis)
 
 if __name__ == '__main__':
 	main()
